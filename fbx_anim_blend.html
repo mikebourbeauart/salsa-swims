@@ -71,14 +71,17 @@
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
     camera.position.set(100, 200, 300);
 
+    // Controls
     controls = new THREE.OrbitControls(camera);
-    controls.target.set(0, 100, 0);
+    controls.target.set(0, 0, 0);
     controls.update();
 
+    // Scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xa0a0a0);
     //scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
+    // Lights
     light = new THREE.HemisphereLight(0xffffff, 0x444444);
     light.position.set(0, 200, 0);
     scene.add(light);
@@ -97,7 +100,21 @@
 
     // scene.add( new THREE.CameraHelper( light.shadow.camera ) );
 
-    // ground
+    // Renderer
+    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    window.addEventListener('resize', onWindowResize, false);
+
+    // Stats
+    stats = new Stats();
+    container.appendChild(stats.dom);
+
+    // Ground
     var mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), new THREE.MeshPhongMaterial({
       color: 0x999999,
       depthWrite: false
@@ -106,12 +123,13 @@
     mesh.receiveShadow = true;
     scene.add(mesh);
 
+    // Grid
     var grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
     grid.material.opacity = 0.2;
     grid.material.transparent = true;
     scene.add(grid);
 
-    // material
+    // Material
     var loader = new THREE.TextureLoader();
     var imgTexture = loader.load('models/fbx/white05.jpg');
     //var material = new THREE.MeshLambertMaterial( { map: imgTexture } );
@@ -120,7 +138,7 @@
       lights: true
     });
 
-    // model
+    // Model
     var loader = new THREE.FBXLoader();
     loader.load('models/fbx/fbx_ascii_anim_baked_light_008.fbx', function (object) {
       object.mixer = new THREE.AnimationMixer(object);
@@ -131,32 +149,10 @@
         if (child.isMesh) {
           //child.castShadow = true;
           child.receiveShadow = true;
-          // var geometry = new THREE.Geometry();
-          // geometry.vertices = vertices;
-          // geometry.faces = faces;
-          // geometry.computeFaceNormals();
-          // geometry.mergeVertices();
-          // geometry.computeVertexNormals();
-          // var buffer_g = new THREE.BufferGeometry();
-          // buffer_g.fromGeometry(geometry);
-          // var mesh = new THREE.Mesh(buffer_g, material);
         }
       });
       scene.add(object);
     });
-
-    renderer = new THREE.WebGLRenderer({antialias: true});
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    container.appendChild(renderer.domElement);
-
-    window.addEventListener('resize', onWindowResize, false);
-
-    // stats
-    stats = new Stats();
-    container.appendChild(stats.dom);
 
   }
 
