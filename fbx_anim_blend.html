@@ -31,22 +31,19 @@
 </head>
 
 <body>
-<div id="info">
 
+<div id="info">
     <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - FBXLoader<br/>
-    Character and animation from <a href="https://www.mixamo.com/" target="_blank" rel="noopener">Mixamo</a>
+    </a>
 </div>
 
 <script src="http://mrdoob.github.com/three.js/build/three.min.js"></script>
-
 <script src="http://mrdoob.github.com/three.js/examples/js/libs/inflate.min.js"></script>
-
 <script src="http://mrdoob.github.com/three.js/examples/js/loaders/FBXLoader.js"></script>
 <script src="http://mrdoob.github.com/three.js/examples/js/controls/OrbitControls.js"></script>
 <script src="http://mrdoob.github.com/three.js/examples/js/Detector.js"></script>
 <script src="http://mrdoob.github.com/three.js/examples/js/libs/stats.min.js"></script>
 <script src="http://mrdoob.github.com/three.js/examples/js/libs/dat.gui.min.js"></script>
-
 
 <script>
 
@@ -54,6 +51,7 @@
 
   var container, stats, controls;
   var camera, scene, renderer, light;
+  var mixer, clips, clip;
 
   var clock = new THREE.Clock();
 
@@ -83,11 +81,11 @@
 
     // Lights
     light = new THREE.HemisphereLight(0xffffff, 0x444444);
-    light.position.set(0, 200, 0);
+    light.position.set(0, 0, 1);
     scene.add(light);
 
     light = new THREE.DirectionalLight(0xffffff);
-    light.position.set(0, 0, 1);
+    light.position.set(0, 1, 0);
     light.castShadow = true;
     light.shadowDarkness = 1;
     var d = 50;
@@ -141,17 +139,36 @@
     // Model
     var loader = new THREE.FBXLoader();
     loader.load('models/fbx/fbx_ascii_anim_baked_light_008.fbx', function (object) {
-      object.mixer = new THREE.AnimationMixer(object);
-      mixers.push(object.mixer);
-      var action = object.mixer.clipAction(object.animations[0]);
-      action.play();
-      object.traverse(function (child) {
-        if (child.isMesh) {
-          //child.castShadow = true;
+
+      object.mixer = new THREE.AnimationMixer( object );
+      mixers.push( object.mixer );
+
+      // mixer.clipAction( object.animations[ 0 ] ).play();
+      clips = object.animations;
+
+      // // Play a specific animation
+      // clip = THREE.AnimationClip.findByName( clips, 'clp_back_stroke' );
+      // var action = object.mixer.clipAction( clip );
+      // action.play();
+
+      object.traverse( function ( child ) {
+
+        if ( child instanceof THREE.SkinnedMesh ) {
+          console.warn( 'heyo' );
+          // child.castShadow = true;
           child.receiveShadow = true;
+          mesh = child;
         }
-      });
+
+      } );
+
       scene.add(object);
+
+      // Play all animations
+      clips.forEach( function ( clip ) {
+        mixer.clipAction( clip ).play();
+      } );
+
     });
 
   }
@@ -170,16 +187,19 @@
 
     requestAnimationFrame(animate);
 
-    if (mixers.length > 0) {
 
-      for (var i = 0; i < mixers.length; i++) {
+    if ( mixers.length > 0 ) {
 
-        mixers[i].update(clock.getDelta());
+      for ( var i = 0; i < mixers.length; i ++ ) {
+
+        mixers[ i ].update( clock.getDelta() );
 
       }
+
     }
 
     renderer.render(scene, camera);
+
     stats.update();
 
   }
