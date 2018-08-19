@@ -31,163 +31,170 @@
 </head>
 
 <body>
-<div id="info">
 
-    <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - FBXLoader<br/>
-    Character and animation from <a href="https://www.mixamo.com/" target="_blank" rel="noopener">Mixamo</a>
-</div>
+    <div id="info">
+        <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - FBXLoader<br/>
+        </a>
+    </div>
 
-<script src="http://mrdoob.github.com/three.js/build/three.min.js"></script>
+    <script src="http://mrdoob.github.com/three.js/build/three.min.js"></script>
+    <script src="http://mrdoob.github.com/three.js/examples/js/libs/inflate.min.js"></script>
+    <script src="http://mrdoob.github.com/three.js/examples/js/loaders/FBXLoader.js"></script>
+    <script src="http://mrdoob.github.com/three.js/examples/js/controls/OrbitControls.js"></script>
+    <script src="http://mrdoob.github.com/three.js/examples/js/Detector.js"></script>
+    <script src="http://mrdoob.github.com/three.js/examples/js/libs/stats.min.js"></script>
+    <script src="http://mrdoob.github.com/three.js/examples/js/libs/dat.gui.min.js"></script>
 
-<script src="http://mrdoob.github.com/three.js/examples/js/libs/inflate.min.js"></script>
+    <script>
 
-<script src="http://mrdoob.github.com/three.js/examples/js/loaders/FBXLoader.js"></script>
-<script src="http://mrdoob.github.com/three.js/examples/js/controls/OrbitControls.js"></script>
-<script src="http://mrdoob.github.com/three.js/examples/js/Detector.js"></script>
-<script src="http://mrdoob.github.com/three.js/examples/js/libs/stats.min.js"></script>
-<script src="http://mrdoob.github.com/three.js/examples/js/libs/dat.gui.min.js"></script>
+        if (!Detector.webgl) Detector.addGetWebGLMessage();
 
+            var container, stats, controls;
+            var camera, scene, renderer, light;
+            var mixer, clips, clip;
 
-<script>
+            var clock = new THREE.Clock();
 
-  if (!Detector.webgl) Detector.addGetWebGLMessage();
+            var mixers = [];
 
-  var container, stats, controls;
-  var camera, scene, renderer, light;
+            init();
+            animate();
 
-  var clock = new THREE.Clock();
+            function init() {
 
-  var mixers = [];
+                container = document.createElement('div');
+                document.body.appendChild(container);
 
-  init();
-  animate();
+                // Camera
+                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+                camera.position.set(100, 200, 300);
 
-  function init() {
+                // Controls
+                controls = new THREE.OrbitControls(camera);
+                controls.target.set(0, 0, 0);
+                controls.update();
 
-    container = document.createElement('div');
-    document.body.appendChild(container);
+                // Scene
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xa0a0a0);
+                //scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
-    // Camera
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
-    camera.position.set(100, 200, 300);
+                // Lights
+                light = new THREE.HemisphereLight(0xffffff, 0x444444);
+                light.position.set(0, 0, -1);
+                scene.add(light);
 
-    controls = new THREE.OrbitControls(camera);
-    controls.target.set(0, 100, 0);
-    controls.update();
+                light = new THREE.DirectionalLight(0xffffff);
+                light.position.set(0, 0, -1);
+                light.castShadow = true;
+                light.shadowDarkness = .5;
+                light.intensity = .2;
+                var d = 50;
+                light.shadow.camera.top = d * 1.75; //180
+                light.shadow.camera.bottom = -d; //-100
+                light.shadow.camera.left = -d * 1.25; //-120
+                light.shadow.camera.right = d * 1.25; //120
+                light.shadowCameraVisible = true;
+                scene.add(light);
 
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xa0a0a0);
-    //scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
+                // scene.add( new THREE.CameraHelper( light.shadow.camera ) );
 
-    light = new THREE.HemisphereLight(0xffffff, 0x444444);
-    light.position.set(0, 200, 0);
-    scene.add(light);
+                // Renderer
+                renderer = new THREE.WebGLRenderer({antialias: true});
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                container.appendChild(renderer.domElement);
 
-    light = new THREE.DirectionalLight(0xffffff);
-    light.position.set(0, 0, 1);
-    light.castShadow = true;
-    light.shadowDarkness = 1;
-    var d = 50;
-    light.shadow.camera.top = d * 1.75; //180
-    light.shadow.camera.bottom = -d; //-100
-    light.shadow.camera.left = -d * 1.25; //-120
-    light.shadow.camera.right = d * 1.25; //120
-    light.shadowCameraVisible = true;
-    scene.add(light);
+                window.addEventListener('resize', onWindowResize, false);
 
-    // scene.add( new THREE.CameraHelper( light.shadow.camera ) );
+                // Stats
+                stats = new Stats();
+                container.appendChild(stats.dom);
 
-    // ground
-    var mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), new THREE.MeshPhongMaterial({
-      color: 0x999999,
-      depthWrite: false
-    }));
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.receiveShadow = true;
-    scene.add(mesh);
+                // Grid
+                var grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
+                grid.material.opacity = 0.2;
+                grid.material.transparent = true;
+                scene.add(grid);
 
-    var grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
-    grid.material.opacity = 0.2;
-    grid.material.transparent = true;
-    scene.add(grid);
+                // Material
+                var loader = new THREE.TextureLoader();
+                var imgTexture = loader.load('models/fbx/white05.jpg');
+                //var material = new THREE.MeshLambertMaterial( { map: imgTexture } );
+                var material = new THREE.ShaderMaterial({
+                    map: imgTexture,
+                    lights: true
+                });
 
-    // material
-    var loader = new THREE.TextureLoader();
-    var imgTexture = loader.load('models/fbx/white05.jpg');
-    //var material = new THREE.MeshLambertMaterial( { map: imgTexture } );
-    var material = new THREE.ShaderMaterial({
-      map: imgTexture,
-      lights: true
-    });
+                // Model
+                var loader = new THREE.FBXLoader();
+                loader.load('models/fbx/salsa_anims_bin.fbx', function (object) {
+                    object.position.set(0,0,0);
+                    object.mixer = new THREE.AnimationMixer( object );
 
-    // model
-    var loader = new THREE.FBXLoader();
-    loader.load('models/fbx/fbx_ascii_anim_baked_light_008.fbx', function (object) {
-      object.mixer = new THREE.AnimationMixer(object);
-      mixers.push(object.mixer);
-      var action = object.mixer.clipAction(object.animations[0]);
-      action.play();
-      object.traverse(function (child) {
-        if (child.isMesh) {
-          //child.castShadow = true;
-          child.receiveShadow = true;
-          // var geometry = new THREE.Geometry();
-          // geometry.vertices = vertices;
-          // geometry.faces = faces;
-          // geometry.computeFaceNormals();
-          // geometry.mergeVertices();
-          // geometry.computeVertexNormals();
-          // var buffer_g = new THREE.BufferGeometry();
-          // buffer_g.fromGeometry(geometry);
-          // var mesh = new THREE.Mesh(buffer_g, material);
-        }
-      });
-      scene.add(object);
-    });
+                    mixers.push( object.mixer );
 
-    renderer = new THREE.WebGLRenderer({antialias: true});
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    container.appendChild(renderer.domElement);
+                    clips = object.animations;
 
-    window.addEventListener('resize', onWindowResize, false);
+                    // Play a specific animation
+                    clip = THREE.AnimationClip.findByName( clips, 'clp_breast_stroke_w_pause' );
+                    // clip = THREE.AnimationClip.findByName( clips, 'clp_back_stroke' );
+                    var action = object.mixer.clipAction( clip );
+                    action.play();
 
-    // stats
-    stats = new Stats();
-    container.appendChild(stats.dom);
+                    object.traverse( function ( child ) {
 
-  }
+                        if ( child instanceof THREE.SkinnedMesh ) {
 
-  function onWindowResize() {
+                            child.castShadow = true;
+                            //child.receiveShadow = true;
+                            //mesh = child;
+                        }
 
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+                    } );
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
+                    // // Play all animations
+                    // clips.forEach( function ( clip ) {
+                    //   object.mixer.clipAction( clip ).play();
+                    // } );
 
-  }
+                    scene.add(object);
+                });
 
-  //
-  function animate() {
+              }
 
-    requestAnimationFrame(animate);
+            function onWindowResize() {
 
-    if (mixers.length > 0) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
 
-      for (var i = 0; i < mixers.length; i++) {
+                renderer.setSize(window.innerWidth, window.innerHeight);
 
-        mixers[i].update(clock.getDelta());
+            }
 
-      }
-    }
+              //
+            function animate() {
 
-    renderer.render(scene, camera);
-    stats.update();
+                requestAnimationFrame(animate);
 
-  }
+                if ( mixers.length > 0 ) {
 
-</script>
-</body>
+                    for ( var i = 0; i < mixers.length; i ++ ) {
+
+                        mixers[ i ].update( clock.getDelta() );
+
+                    }
+
+                }
+
+                renderer.render(scene, camera);
+
+                stats.update();
+
+            }
+
+    </script>
+    </body>
 </html>
