@@ -138,23 +138,23 @@
 
     // Model
     var loader = new THREE.FBXLoader();
-    loader.load('models/fbx/fbx_ascii_anim_baked_light_008.fbx', function (object) {
-
+    loader.load('models/fbx/salsa_anims_bin.fbx', function (object) {
+      object.position.set(0,0,0);
       object.mixer = new THREE.AnimationMixer( object );
+
       mixers.push( object.mixer );
 
-      // mixer.clipAction( object.animations[ 0 ] ).play();
       clips = object.animations;
 
-      // // Play a specific animation
-      // clip = THREE.AnimationClip.findByName( clips, 'clp_back_stroke' );
-      // var action = object.mixer.clipAction( clip );
-      // action.play();
+      // Play a specific animation
+      clip = THREE.AnimationClip.findByName( clips, 'clp_breast_stroke_w_pause' );
+      var action = object.mixer.clipAction( clip );
+      action.play();
 
       object.traverse( function ( child ) {
 
         if ( child instanceof THREE.SkinnedMesh ) {
-          console.warn( 'heyo' );
+
           // child.castShadow = true;
           child.receiveShadow = true;
           mesh = child;
@@ -162,13 +162,12 @@
 
       } );
 
+      // // Play all animations
+      // clips.forEach( function ( clip ) {
+      //   object.mixer.clipAction( clip ).play();
+      // } );
+
       scene.add(object);
-
-      // Play all animations
-      clips.forEach( function ( clip ) {
-        mixer.clipAction( clip ).play();
-      } );
-
     });
 
   }
@@ -187,7 +186,6 @@
 
     requestAnimationFrame(animate);
 
-
     if ( mixers.length > 0 ) {
 
       for ( var i = 0; i < mixers.length; i ++ ) {
@@ -197,6 +195,7 @@
       }
 
     }
+
 
     renderer.render(scene, camera);
 
