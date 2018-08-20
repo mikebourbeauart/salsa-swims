@@ -1,200 +1,294 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>1</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <style>
-        body {
-            font-family: Monospace;
-            background-color: #000;
-            color: #fff;
-            margin: 0;
-            overflow: hidden;
-        }
+	<title>fbx anim blend</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			font-family: Monospace;
+			background-color: #000;
+			color: #fff;
+			margin: 0;
+			overflow: hidden;
+		}
 
-        #info {
-            color: #fff;
-            position: absolute;
-            top: 10px;
-            width: 100%;
-            text-align: center;
-            z-index: 100;
-            display: block;
-        }
+		#info {
+			color: #fff;
+			position: absolute;
+			top: 10px;
+			width: 100%;
+			text-align: center;
+			z-index: 100;
+			display: block;
+		}
 
-        #info a {
-            color: #046;
-            font-weight: bold;
-        }
-    </style>
+		#info a {
+			color: #fe00ef;
+			font-weight: bold;
+		}
+	</style>
 </head>
 
 <body>
 
-    <div id="info">
-        <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - FBXLoader<br/>
-        </a>
-    </div>
+<div id="container"></div>
+<div id="info">
+	<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - Salsa Swims<br/>
+	</a>
+</div>
 
-    <script src="http://mrdoob.github.com/three.js/build/three.min.js"></script>
-    <script src="http://mrdoob.github.com/three.js/examples/js/libs/inflate.min.js"></script>
-    <script src="http://mrdoob.github.com/three.js/examples/js/loaders/FBXLoader.js"></script>
-    <script src="http://mrdoob.github.com/three.js/examples/js/controls/OrbitControls.js"></script>
-    <script src="http://mrdoob.github.com/three.js/examples/js/Detector.js"></script>
-    <script src="http://mrdoob.github.com/three.js/examples/js/libs/stats.min.js"></script>
-    <script src="http://mrdoob.github.com/three.js/examples/js/libs/dat.gui.min.js"></script>
+<script src="http://mrdoob.github.com/three.js/build/three.min.js"></script>
+<script src="http://mrdoob.github.com/three.js/examples/js/libs/inflate.min.js"></script>
+<script src="http://mrdoob.github.com/three.js/examples/js/loaders/FBXLoader.js"></script>
+<script src="http://mrdoob.github.com/three.js/examples/js/controls/OrbitControls.js"></script>
+<script src="http://mrdoob.github.com/three.js/examples/js/Detector.js"></script>
+<script src="http://mrdoob.github.com/three.js/examples/js/libs/stats.min.js"></script>
+<script src="http://mrdoob.github.com/three.js/examples/js/libs/dat.gui.min.js"></script>
 
-    <script>
+<script>
 
-        if (!Detector.webgl) Detector.addGetWebGLMessage();
+    if (!Detector.webgl) Detector.addGetWebGLMessage();
 
-            var container, stats, controls;
-            var camera, scene, renderer, light;
-            var mixer, clips, clip;
+    // Web
+    var container, stats, controls;
 
-            var clock = new THREE.Clock();
+    // Render
+    var camera, scene, renderer, light;
 
-            var mixers = [];
+    // Anim
+    var clips;
+    var mixers = [];
+    var clock = new THREE.Clock();
 
-            init();
-            animate();
+    // Model
+    var character, mesh, skeleton;
 
-            function init() {
+    // GUI
+    var settings;
 
-                container = document.createElement('div');
-                document.body.appendChild(container);
+    init();
+    animate();
 
-                // Camera
-                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
-                camera.position.set(100, 200, 300);
+    function init() {
 
-                // Controls
-                controls = new THREE.OrbitControls(camera);
-                controls.target.set(0, 0, 0);
-                controls.update();
+        container = document.createElement('div');
+        document.body.appendChild(container);
 
-                // Scene
-                scene = new THREE.Scene();
-                scene.background = new THREE.Color(0xa0a0a0);
-                //scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
+        // Camera
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+        camera.position.set(100, 200, 300);
 
-                // Lights
-                light = new THREE.HemisphereLight(0xffffff, 0x444444);
-                light.position.set(0, 0, -1);
-                scene.add(light);
+        // Controls
+        controls = new THREE.OrbitControls(camera);
+        controls.target.set(0, 0, 0);
+        controls.update();
 
-                light = new THREE.DirectionalLight(0xffffff);
-                light.position.set(0, 0, -1);
-                light.castShadow = true;
-                light.shadowDarkness = .5;
-                light.intensity = .2;
-                var d = 50;
-                light.shadow.camera.top = d * 1.75; //180
-                light.shadow.camera.bottom = -d; //-100
-                light.shadow.camera.left = -d * 1.25; //-120
-                light.shadow.camera.right = d * 1.25; //120
-                light.shadowCameraVisible = true;
-                scene.add(light);
+        // Scene
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xa0a0a0);
+        //scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
-                // scene.add( new THREE.CameraHelper( light.shadow.camera ) );
+        // Lights
+        light = new THREE.HemisphereLight(0xffffff, 0x444444);
+        light.position.set(0, 0, .5);
+        scene.add(light);
 
-                // Renderer
-                renderer = new THREE.WebGLRenderer({antialias: true});
-                renderer.setPixelRatio(window.devicePixelRatio);
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.shadowMap.enabled = true;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                container.appendChild(renderer.domElement);
+        light = new THREE.DirectionalLight(0xffffff);
+        light.position.set(0, 0, .5);
+        light.castShadow = true;
+        light.shadowDarkness = .5;
+        light.intensity = .2;
+        let d = 50;
+        light.shadow.camera.top = d * 1.75; //180
+        light.shadow.camera.bottom = -d; //-100
+        light.shadow.camera.left = -d * 1.25; //-120
+        light.shadow.camera.right = d * 1.25; //120
+        light.shadowCameraVisible = true;
+        scene.add(light);
 
-                window.addEventListener('resize', onWindowResize, false);
+        // scene.add( new THREE.CameraHelper( light.shadow.camera ) );
 
-                // Stats
-                stats = new Stats();
-                container.appendChild(stats.dom);
+        // Renderer
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
 
-                // Grid
-                var grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
-                grid.material.opacity = 0.2;
-                grid.material.transparent = true;
-                scene.add(grid);
+        window.addEventListener('resize', onWindowResize, false);
 
-                // Material
-                var loader = new THREE.TextureLoader();
-                var imgTexture = loader.load('models/fbx/white05.jpg');
-                //var material = new THREE.MeshLambertMaterial( { map: imgTexture } );
-                var material = new THREE.ShaderMaterial({
-                    map: imgTexture,
-                    lights: true
-                });
+        // Stats
+        stats = new Stats();
+        container.appendChild(stats.dom);
 
-                // Model
-                var loader = new THREE.FBXLoader();
-                loader.load('models/fbx/salsa_anims_bin.fbx', function (object) {
-                    object.position.set(0,0,0);
-                    object.mixer = new THREE.AnimationMixer( object );
+        // Grid
+        var grid = new THREE.GridHelper(2000, 20, 0x000000, 0x000000);
+        grid.material.opacity = 0.2;
+        grid.material.transparent = true;
+        scene.add(grid);
 
-                    mixers.push( object.mixer );
+        // Material
+        var loader = new THREE.TextureLoader();
+        var imgTexture = loader.load('models/fbx/white05.jpg');
+        var specColor = new THREE.Color( 0xff80ff  );
+        var material = new THREE.MeshToonMaterial({
+            map: imgTexture,
+            lights: true,
+			skinning: true,
+			specular: specColor,
+			shininess: 20,
+        });
 
-                    clips = object.animations;
 
-                    // Play a specific animation
-                    clip = THREE.AnimationClip.findByName( clips, 'clp_breast_stroke_w_pause' );
-                    // clip = THREE.AnimationClip.findByName( clips, 'clp_back_stroke' );
-                    var action = object.mixer.clipAction( clip );
-                    action.play();
+        // Character
+        var loader = new THREE.FBXLoader();
+        loader.load('models/fbx/salsa_anims_binTE.fbx', function (object) {
+            character = object;
+            character.position.set(0,0,0);
 
-                    object.traverse( function ( child ) {
+            // Animation
+            character.mixer = new THREE.AnimationMixer( character );
+            mixers.push( character.mixer );
+            clips = character.animations;
 
-                        if ( child instanceof THREE.SkinnedMesh ) {
+            // Get mesh
+            character.traverse( function ( child ) {
 
-                            child.castShadow = true;
-                            //child.receiveShadow = true;
-                            //mesh = child;
-                        }
-
-                    } );
-
-                    // // Play all animations
-                    // clips.forEach( function ( clip ) {
-                    //   object.mixer.clipAction( clip ).play();
-                    // } );
-
-                    scene.add(object);
-                });
-
-              }
-
-            function onWindowResize() {
-
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-
-                renderer.setSize(window.innerWidth, window.innerHeight);
-
-            }
-
-              //
-            function animate() {
-
-                requestAnimationFrame(animate);
-
-                if ( mixers.length > 0 ) {
-
-                    for ( var i = 0; i < mixers.length; i ++ ) {
-
-                        mixers[ i ].update( clock.getDelta() );
-
-                    }
-
+                if ( child instanceof THREE.SkinnedMesh ) {
+                    //child.castShadow = true;
+                    //child.receiveShadow = true;
+                    mesh = child;
+                    mesh.material = material;
                 }
 
-                renderer.render(scene, camera);
+            } );
 
-                stats.update();
+            scene.add(character);
+
+            // Skeleton
+            skeleton = new THREE.SkeletonHelper( character );
+            skeleton.visible = false;
+            scene.add( skeleton );
+
+            initGUI();
+
+        });
+
+    }
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    function initGUI() {
+
+        var panel = new dat.GUI( { width: 310 } );
+
+        var folder1 = panel.addFolder( 'Visibility' );
+        var folder2 = panel.addFolder( 'Activation/Deactivation' );
+        var folder5 = panel.addFolder( 'Blend Weights');
+
+        settings = {
+            'show model':                 true,
+            'show skeleton':              false,
+            'deactivate all':             deactivateAllActions,
+            'activate all':               activateAllActions
+        };
+
+
+        folder1.add( settings, 'show model' ).onChange( showModel );
+        folder1.add( settings, 'show skeleton' ).onChange( showSkeleton );
+        folder2.add( settings, 'deactivate all' );
+        folder2.add( settings, 'activate all' );
+
+        // Dynamically generate UI from clip names in fbx
+        clips.forEach( function ( clip ) {
+
+            if(clip.name == 'clp_dead') {
+                settings[clip.name] = 1;
+            }
+            else{
+                settings[clip.name] = 0;
+            }
+
+            folder5.add( settings, clip.name, 0.0, 1.0, 0.01 ).listen().onChange( activateAllActions );
+
+        });
+
+        folder1.open();
+        folder2.open();
+        folder5.open();
+
+    }
+
+    function showModel( visibility ) {
+
+        mesh.visible = visibility;
+
+    }
+
+    function showSkeleton( visibility ) {
+
+        skeleton.visible = visibility;
+
+    }
+
+    function deactivateAllActions() {
+
+        clips.forEach( function ( clip ) {
+
+            character.mixer.clipAction( clip ).stop();
+
+        } );
+
+    }
+
+
+    function activateAllActions() {
+
+        clips.forEach( function ( clip ) {
+            setWeight(clip, settings[clip.name])
+            character.mixer.clipAction( clip ).play();
+        } );
+
+    }
+
+    function setWeight( clip, weight ) {
+
+        character.mixer.clipAction( clip ).enabled = true;
+        character.mixer.clipAction( clip ).setEffectiveTimeScale( 1 );
+        character.mixer.clipAction( clip ).setEffectiveWeight( weight );
+
+    }
+
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+
+        if ( mixers.length > 0 ) {
+
+            for ( var i = 0; i < mixers.length; i ++ ) {
+
+                mixers[ i ].update( clock.getDelta() );
 
             }
 
-    </script>
-    </body>
+        }
+
+        renderer.render(scene, camera);
+
+        stats.update();
+
+    }
+
+</script>
+</body>
 </html>
