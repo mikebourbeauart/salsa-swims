@@ -148,23 +148,10 @@
             character = object;
             character.position.set(0,0,0);
 
-            // Mixer
+            // Animation
             character.mixer = new THREE.AnimationMixer( character );
             mixers.push( character.mixer );
-
             clips = character.animations;
-
-
-            // Play a specific animation
-            // clip = THREE.AnimationClip.findByName( clips, 'clp_breast_stroke_w_pause' );
-            // clip = THREE.AnimationClip.findByName( clips, 'clp_back_stroke' );
-            // var action = character.mixer.clipAction( clip );
-            // action.play();
-
-            // Play all animations
-            // clips.forEach( function ( clip ) {
-            // 	object.mixer.clipAction( clip ).play();
-            // } );
 
             // Get mesh
             character.traverse( function ( child ) {
@@ -186,6 +173,7 @@
             scene.add( skeleton );
 
             initGUI();
+
         });
 
     }
@@ -212,11 +200,7 @@
             'show skeleton':              false,
             'deactivate all':             deactivateAllActions,
             'activate all':               activateAllActions
-
-            // 'clp_breast_stroke_w_pause':  1.0,
-            // 'clp_back_stroke':            0.0,
         };
-
 
 
         folder1.add( settings, 'show model' ).onChange( showModel );
@@ -224,27 +208,19 @@
         folder2.add( settings, 'deactivate all' );
         folder2.add( settings, 'activate all' );
 
-        // Generate UI from clip data
+        // Dynamically generate UI from clip names in fbx
         clips.forEach( function ( clip ) {
 
             if(clip.name == 'clp_dead') {
-
                 settings[clip.name] = 1;
-
             }
             else{
-
                 settings[clip.name] = 0;
-
             }
 
             folder5.add( settings, clip.name, 0.0, 1.0, 0.01 ).listen().onChange( activateAllActions );
 
         });
-
-
-        // folder5.add( settings, 'clp_breast_stroke_w_pause', 0.0, 1.0, 0.01 ).listen().onChange( activateAllActions );
-        // folder5.add( settings, 'clp_back_stroke', 0.0, 1.0, 0.01 ).listen().onChange( activateAllActions );
 
         folder1.open();
         folder2.open();
