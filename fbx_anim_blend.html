@@ -79,11 +79,6 @@
         camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
         camera.position.set(100, 200, 300);
 
-        // Controls
-        controls = new THREE.OrbitControls(camera);
-        controls.target.set(0, 0, 0);
-        controls.update();
-
         // Scene
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0xa0a0a0);
@@ -116,6 +111,11 @@
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
+
+        // Controls
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0);
+        controls.update();
 
         window.addEventListener('resize', onWindowResize, false);
 
