@@ -57,15 +57,18 @@
     var camera, scene, renderer, light;
 
     // Anim
-    var clips;
+    var clips = [];
     var mixers = [];
     var clock = new THREE.Clock();
 
     // Model
-    var character, mesh, skeleton;
+    var _character, mesh, skeleton;
 
     // GUI
     var settings;
+
+    var manager = new THREE.LoadingManager();
+
 
     init();
     animate();
@@ -130,52 +133,70 @@
         scene.add(grid);
 
         // Material
-        var loader = new THREE.TextureLoader();
-        var imgTexture = loader.load('models/fbx/white05.jpg');
+        var textureLoader = new THREE.TextureLoader();
+        var imgTexture = textureLoader.load('./models/fbx/white05.jpg');
         var specColor = new THREE.Color( 0xff80ff  );
         var material = new THREE.MeshToonMaterial({
             map: imgTexture,
             lights: true,
-			skinning: true,
-			specular: specColor,
-			shininess: 20,
+            skinning: true,
+            specular: specColor,
+            shininess: 20,
         });
 
 
         // Character
-        var loader = new THREE.FBXLoader();
-        loader.load('models/fbx/salsa_anims_binTE.fbx', function (object) {
-            character = object;
-            character.position.set(0,0,0);
+        Promise.all([
+            loadFbxPromise('./models/fbx/salsa_asc_clp_back_stroke.fbx'),
+            loadFbxPromise('./models/fbx/salsa_asc_clp_breast_stroke_w_pause.fbx'),
+            loadFbxPromise('./models/fbx/salsa_asc_clp_dead.fbx')
+        ])
+            .then(allObjects=>{
 
-            // Animation
-            character.mixer = new THREE.AnimationMixer( character );
-            mixers.push( character.mixer );
-            clips = character.animations;
+                _character = allObjects[0];
+                _character.position.set(0,0,0);
 
-            // Get mesh
-            character.traverse( function ( child ) {
+                allObjects.forEach(character=>{
+                    mixers.push( new THREE.AnimationMixer( character ) );
+                    clips = clips.concat(character.animations);
+                })
 
-                if ( child instanceof THREE.SkinnedMesh ) {
-                    //child.castShadow = true;
-                    //child.receiveShadow = true;
-                    mesh = child;
-                    mesh.material = material;
-                }
+                _character.mixer = mixers[0];
 
-            } );
+                _character.traverse( function ( child ) {
 
-            scene.add(character);
+                    if ( child instanceof THREE.SkinnedMesh ) {
+                        //child.castShadow = true;
+                        //child.receiveShadow = true;
+                        mesh = child;
+                        mesh.material = material;
+                    }
 
-            // Skeleton
-            skeleton = new THREE.SkeletonHelper( character );
-            skeleton.visible = false;
-            scene.add( skeleton );
+                } );
 
-            initGUI();
+                scene.add(_character);
 
-        });
+                // Skeleton
+                skeleton = new THREE.SkeletonHelper( _character );
+                skeleton.visible = false;
+                scene.add( skeleton );
 
+                initGUI();
+            });
+
+        function loadFbxPromise(url) {
+
+            return new Promise((resolve, reject)=>{
+
+                let fbxLoader = new THREE.FBXLoader(manager);
+
+                // onLoad, onProgress, onError
+                fbxLoader.load(url,
+                    object=> {resolve(object)},
+                    ()=>{/* progress */},
+                    e=>reject(e));
+            })
+        }
     }
 
     function onWindowResize() {
@@ -244,7 +265,7 @@
 
         clips.forEach( function ( clip ) {
 
-            character.mixer.clipAction( clip ).stop();
+            _character.mixer.clipAction( clip ).stop();
 
         } );
 
@@ -255,16 +276,16 @@
 
         clips.forEach( function ( clip ) {
             setWeight(clip, settings[clip.name])
-            character.mixer.clipAction( clip ).play();
+            _character.mixer.clipAction( clip ).play();
         } );
 
     }
 
     function setWeight( clip, weight ) {
 
-        character.mixer.clipAction( clip ).enabled = true;
-        character.mixer.clipAction( clip ).setEffectiveTimeScale( 1 );
-        character.mixer.clipAction( clip ).setEffectiveWeight( weight );
+        _character.mixer.clipAction( clip ).enabled = true;
+        _character.mixer.clipAction( clip ).setEffectiveTimeScale( 1 );
+        _character.mixer.clipAction( clip ).setEffectiveWeight( weight );
 
     }
 
@@ -275,7 +296,7 @@
 
         if ( mixers.length > 0 ) {
 
-            for ( var i = 0; i < mixers.length; i ++ ) {
+            for ( let i = 0; i < mixers.length; i ++ ) {
 
                 mixers[ i ].update( clock.getDelta() );
 
